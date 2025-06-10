@@ -1,11 +1,35 @@
 #include <gtk/gtk.h>
 
+typedef struct {
+    GtkToggleButton *toggles[8];
+    GtkLabel *label;
+} BitToggleData;
+
+static void
+change_bit (GtkToggleButton *button, 
+            gpointer        user_data)
+{
+    BitToggleData *data = user_data;
+
+    int value = 0;
+
+    for (int i = 0; i < 8; i++) {
+        if (gtk_toggle_button_get_active (data->toggles[i]))
+            value |= (1 << (7 - i));
+    }
+
+    char buf[64];
+    snprintf (buf, sizeof (buf), "Decimal: %d    Hex: 0x%02X    Bin: 0b%08b", value, value, value);
+    gtk_label_set_text (GTK_LABEL (data->label), buf);
+}
+
 static void 
 activate (GtkApplication *app, 
 		  gpointer		  user_data) 
 {
     GtkWidget *window;
-    GtkWidget *box;
+    GtkWidget *vbox, *hbox;
+    GtkWidget *label;
     GtkWidget *toggle1, *toggle2, *toggle3, *toggle4, *toggle5, *toggle6, *toggle7, *toggle8;
 
 	GtkWidget *toggles[8] = {toggle1, toggle2, toggle3, toggle4, toggle5, toggle6, toggle7, toggle8};
@@ -14,43 +38,27 @@ activate (GtkApplication *app,
     gtk_window_set_title (GTK_WINDOW (window), "Bit Toggle");
     gtk_window_set_default_size (GTK_WINDOW (window), 400, 400);
 
-    box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 12);
-	gtk_widget_set_halign (box, GTK_ALIGN_CENTER);
-	gtk_widget_set_valign (box, GTK_ALIGN_CENTER);
+    vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
+	gtk_widget_set_halign (vbox, GTK_ALIGN_CENTER);
+	gtk_widget_set_valign (vbox, GTK_ALIGN_CENTER);
 
-    toggle1 = gtk_toggle_button_new ();
+    hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
 
-    gtk_box_append (GTK_BOX (box), toggle1);
+    label = gtk_label_new ("Decimal: 0       Hex: 0x00    Bin: 0b00000000");
 
-    toggle2 = gtk_toggle_button_new ();
+    BitToggleData *data = g_malloc (sizeof(BitToggleData));
+    data -> label = GTK_LABEL (label);
 
-    gtk_box_append (GTK_BOX (box), toggle2);
+    for (int i = 0; i < 8; i++) {
+        GtkWidget *toggle = gtk_toggle_button_new();
+        data->toggles[i] = GTK_TOGGLE_BUTTON (toggle);
+        gtk_box_append (GTK_BOX (hbox), toggle);
+        g_signal_connect (toggle, "toggled", G_CALLBACK (change_bit), data);
+    }
 
-    toggle3 = gtk_toggle_button_new ();
-
-    gtk_box_append (GTK_BOX (box), toggle3);
-
-    toggle4 = gtk_toggle_button_new ();
-
-    gtk_box_append (GTK_BOX (box), toggle4);
-
-    toggle5 = gtk_toggle_button_new ();
-
-    gtk_box_append (GTK_BOX (box), toggle5);
-
-    toggle6 = gtk_toggle_button_new ();
-
-    gtk_box_append (GTK_BOX (box), toggle6);
-
-    toggle7 = gtk_toggle_button_new ();
-
-    gtk_box_append (GTK_BOX (box), toggle7);
-
-    toggle8 = gtk_toggle_button_new ();
-
-    gtk_box_append (GTK_BOX (box), toggle8);
-
-	gtk_window_set_child (GTK_WINDOW (window), box);
+    gtk_box_append (GTK_BOX (vbox), hbox);
+    gtk_box_append (GTK_BOX (vbox), label);
+	gtk_window_set_child (GTK_WINDOW (window), vbox);
     gtk_window_present (GTK_WINDOW (window));
 }
 
