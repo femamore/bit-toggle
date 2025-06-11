@@ -6,6 +6,21 @@ typedef struct {
 } BitToggleData;
 
 static void
+free_bit_toggle_data (GtkWidget *widget, gpointer user_data)
+{
+    g_free(user_data);
+}
+
+void
+int_to_binary (int value, char *buf)
+{
+    for (int i = 7; i >= 0; i--) 
+        buf[7 - i] = (value & (1 << i)) ? '1' : '0';
+
+    buf[8] = '\0';
+}
+
+static void
 change_bit (GtkToggleButton *button, 
             gpointer        user_data)
 {
@@ -19,7 +34,9 @@ change_bit (GtkToggleButton *button,
     }
 
     char buf[64];
-    snprintf (buf, sizeof (buf), "Decimal: %d    Hex: 0x%02X    Bin: 0b%08b", value, value, value);
+    char bin[9];
+    int_to_binary (value, bin);
+    snprintf (buf, sizeof (buf), "Decimal: %d    Hex: 0x%02X    Bin: 0b%s", value, value, bin);
     gtk_label_set_text (GTK_LABEL (data->label), buf);
 }
 
@@ -30,9 +47,6 @@ activate (GtkApplication *app,
     GtkWidget *window;
     GtkWidget *vbox, *hbox;
     GtkWidget *label;
-    GtkWidget *toggle1, *toggle2, *toggle3, *toggle4, *toggle5, *toggle6, *toggle7, *toggle8;
-
-	GtkWidget *toggles[8] = {toggle1, toggle2, toggle3, toggle4, toggle5, toggle6, toggle7, toggle8};
 
     window = gtk_application_window_new (app);
     gtk_window_set_title (GTK_WINDOW (window), "Bit Toggle");
@@ -59,6 +73,10 @@ activate (GtkApplication *app,
     gtk_box_append (GTK_BOX (vbox), hbox);
     gtk_box_append (GTK_BOX (vbox), label);
 	gtk_window_set_child (GTK_WINDOW (window), vbox);
+
+    g_object_set_data_full (G_OBJECT(window), "bit-data",
+                            data, g_free);
+
     gtk_window_present (GTK_WINDOW (window));
 }
 
