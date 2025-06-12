@@ -6,7 +6,8 @@ typedef struct {
 } BitToggleData;
 
 static void
-free_bit_toggle_data (GtkWidget *widget, gpointer user_data)
+free_bit_toggle_data (GtkWidget *widget, 
+                      gpointer user_data)
 {
     g_free(user_data);
 }
@@ -18,6 +19,18 @@ int_to_binary (int value, char *buf)
         buf[7 - i] = (value & (1 << i)) ? '1' : '0';
 
     buf[8] = '\0';
+}
+
+static void
+reset_toggles (GtkToggleButton *button,
+               gpointer        user_data)
+{
+    BitToggleData *data = user_data;
+
+    for (int i = 0; i < 8; i++)
+        gtk_toggle_button_set_active (data->toggles[i], FALSE);
+
+    gtk_label_set_text (data->label, "Decimal: 0    Hex: 0x00    Bin: 0b00000000");
 }
 
 static void
@@ -47,6 +60,7 @@ activate (GtkApplication *app,
     GtkWidget *window;
     GtkWidget *vbox, *hbox;
     GtkWidget *label;
+    GtkWidget *reset_button;
 
     window = gtk_application_window_new (app);
     gtk_window_set_title (GTK_WINDOW (window), "Bit Toggle");
@@ -60,18 +74,22 @@ activate (GtkApplication *app,
 
     label = gtk_label_new ("Decimal: 0       Hex: 0x00    Bin: 0b00000000");
 
-    BitToggleData *data = g_malloc (sizeof(BitToggleData));
+    BitToggleData *data = g_malloc (sizeof (BitToggleData));
     data -> label = GTK_LABEL (label);
 
     for (int i = 0; i < 8; i++) {
-        GtkWidget *toggle = gtk_toggle_button_new();
+        GtkWidget *toggle = gtk_toggle_button_new ();
         data->toggles[i] = GTK_TOGGLE_BUTTON (toggle);
         gtk_box_append (GTK_BOX (hbox), toggle);
         g_signal_connect (toggle, "toggled", G_CALLBACK (change_bit), data);
     }
 
+    reset_button = gtk_button_new_with_label ("Reset");
+    g_signal_connect (reset_button, "clicked", G_CALLBACK (reset_toggles), data);
+
     gtk_box_append (GTK_BOX (vbox), hbox);
     gtk_box_append (GTK_BOX (vbox), label);
+    gtk_box_append (GTK_BOX (vbox), reset_button);
 	gtk_window_set_child (GTK_WINDOW (window), vbox);
 
     g_object_set_data_full (G_OBJECT(window), "bit-data",
